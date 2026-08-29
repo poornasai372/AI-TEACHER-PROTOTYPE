@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI Learning Lab — Overfitting Studio</title>
+<style>
+:root{--bg:#f6f7fb;--ink:#182033;--muted:#687189;--card:#fff;--line:#e3e6ee;--accent:#5b5cf0;--good:#138a62;--soft:#eef0ff;--warn:#fff4d9}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+header{height:72px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 6vw;position:sticky;top:0;z-index:5}
+.logo{font-weight:900;letter-spacing:1.7px}.logo span{color:var(--accent)}.progress{font-size:12px;color:var(--muted)}
+main{width:min(980px,92%);margin:42px auto 70px}.hero{text-align:center;max-width:780px;margin:auto}.tag{display:inline-block;padding:7px 11px;border-radius:999px;background:var(--soft);color:var(--accent);font-size:11px;font-weight:900;letter-spacing:1.4px}.hero h1{font-size:46px;letter-spacing:-2px;margin:17px 0 12px}.hero p{color:var(--muted);line-height:1.7}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px;margin-top:24px;box-shadow:0 10px 30px #1a23400b}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.metric{padding:24px;border:1px solid var(--line);border-radius:17px}.metric small{font-size:10px;letter-spacing:1.5px;color:var(--muted);font-weight:900}.metric strong{display:block;font-size:42px;margin-top:7px}.metric p{color:var(--muted);margin-bottom:0}.bar{height:10px;background:#e9ebf2;border-radius:99px;margin-top:12px;overflow:hidden}.bar i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+h2{font-size:30px;letter-spacing:-1px;margin:5px 0 12px}h3{margin-top:0}.muted{color:var(--muted);line-height:1.75}.coach{padding:17px 19px;border-left:4px solid var(--accent);background:#fafaff;border-radius:12px;margin:20px 0;color:#4f5870;line-height:1.7}
+button{width:100%;padding:15px 18px;border:0;border-radius:13px;background:var(--ink);color:#fff;font-weight:900;cursor:pointer;margin-top:10px}button:hover{transform:translateY(-1px)}button.secondary{background:#fff;color:var(--ink);border:1px solid var(--line)}button.good{background:var(--good)}
+.option{padding:17px;border:2px solid var(--line);border-radius:14px;margin:10px 0;cursor:pointer;background:#fff}.option.selected{border-color:var(--accent);background:var(--soft)}.option.correct{border-color:var(--good);background:#eaf8f2}
+.explain{background:#f8f9fc;border-radius:17px;padding:22px;margin-top:18px}.explain strong{font-size:20px}.pill{display:inline-block;margin:5px 5px 0 0;padding:8px 11px;background:#fff;border:1px solid var(--line);border-radius:9px;font-size:12px}
+textarea{width:100%;min-height:125px;padding:16px;border:1px solid var(--line);border-radius:14px;resize:vertical;font:inherit;outline:none}textarea:focus{border-color:var(--accent)}
+.feedback{padding:17px;border-radius:13px;margin-top:15px;line-height:1.65}.success{background:#eaf8f2;color:#116848;border:1px solid #b9e4d3}.hint{background:var(--warn);color:#735b20;border:1px solid #f0d99b}
+.final{text-align:center;padding:55px 20px}.check{width:70px;height:70px;border-radius:50%;background:#eaf8f2;color:var(--good);display:grid;place-items:center;font-size:34px;font-weight:900;margin:0 auto 18px}.summary{text-align:left;margin-top:24px}.summary div{padding:13px 0;border-bottom:1px solid var(--line)}
+footer{text-align:center;color:var(--muted);font-size:12px;margin-top:25px}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.hero h1{font-size:36px}main{margin-top:25px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="logo">AI <span>LEARNING LAB</span></div>
+ <div class="progress" id="progress">1 / 6</div>
+</header>
+<main id="app"></main>
+<footer>Learning by discovery • explanation • application</footer>
+
+<script>
+const app=document.getElementById("app"), progress=document.getElementById("progress");
+let page=1, selected=[], reflection="", ownExplanation="";
+
+function setProgress(n){page=n;progress.textContent=n+" / 6"}
+function nextButton(id,text){return `<button id="${id}">${text} →</button>`}
+
+function home(){
+ setProgress(1);
+ app.innerHTML=`
+ <section class="hero">
+  <span class="tag">MODEL LAB</span>
+  <h1>Can a model be too good?</h1>
+  <p>You're about to investigate a strange image classifier. Your mission is not to memorize a definition. Your mission is to understand <b>why</b> the model behaves this way.</p>
+ </section>
+ <div class="card">
+  <div class="grid">
+   <div class="metric"><small>TRAINING ACCURACY</small><strong>99%</strong><p>Examples the model learned from.</p><div class="bar"><i style="width:99%"></i></div></div>
+   <div class="metric"><small>TEST ACCURACY</small><strong>63%</strong><p>New examples the model has not seen.</p><div class="bar"><i style="width:63%"></i></div></div>
+  </div>
+  <div class="coach"><b>Mission:</b> Figure out why the two scores are so different. You don't need to know the answer yet.</div>
+  ${nextButton("begin","START INVESTIGATION")}
+ </div>`;
+}
+
+function observe(){
+ setProgress(2);
+ app.innerHTML=`
+ <div class="card">
+  <span class="tag">STEP 1 • OBSERVE</span><h2>Look at the pattern</h2>
+  <p class="muted">The model is almost perfect on data it already knows, but much worse on data it has never seen.</p>
+  <div class="grid">
+   <div class="metric"><small>WHAT IT HAS SEEN</small><strong>99%</strong><p>Very high performance.</p></div>
+   <div class="metric"><small>WHAT IT HASN'T SEEN</small><strong>63%</strong><p>Performance drops.</p></div>
+  </div>
+  <div class="coach"><b>Think like a scientist:</b> A big difference between familiar and new examples is a clue. We don't need to name it yet.</div>
+  ${nextButton("cause","COMPARE POSSIBLE CAUSES")}
+ </div>`;
+}
+
+function causes(){
+ setProgress(3);
+ app.innerHTML=`
+ <div class="card">
+  <span class="tag">STEP 2 • THINK</span><h2>Which explanation fits best?</h2>
+  <p class="muted">Choose the explanation you would investigate first.</p>
+  <div class="option" data-x="a">The model hasn't learned anything useful.</div>
+  <div class="option" data-x="b">The model may have learned the training examples too specifically.</div>
+  <div class="option" data-x="c">New data is always impossible for an AI to understand.</div>
+  <div id="causeFeedback"></div>
+ </div>`;
+ document.querySelectorAll(".option").forEach(o=>o.onclick=()=>{
+  document.querySelectorAll(".option").forEach(x=>x.classList.remove("selected"));
+  o.classList.add("selected");
+  if(o.dataset.x==="b") document.getElementById("causeFeedback").innerHTML=`<div class="feedback success"><b>Good hypothesis.</b> Now let's test it instead of simply trusting it.</div>${nextButton("experiment","RUN EXPERIMENT")}`;
+  else document.getElementById("causeFeedback").innerHTML=`<div class="feedback hint">Look back at the 99% training score. The model clearly learned something. The clue is what happens when the data is new.</div>`;
+ });
+}
+
+function experiment(){
+ setProgress(4);
+ app.innerHTML=`
+ <div class="card">
+  <span class="tag">STEP 3 • EXPERIMENT</span><h2>What happens if we train longer?</h2>
+  <p class="muted">We'll add 20 training epochs while keeping the same training data.</p>
+  <div class="grid">
+   <div class="metric"><small>BEFORE</small><strong>99% / 63%</strong><p>Training / Test</p></div>
+   <div class="metric"><small>AFTER</small><strong>?</strong><p>Make a prediction, then reveal the result.</p></div>
+  </div>
+  <div class="coach"><b>Your prediction:</b> If the problem were simply “not enough training,” would more training necessarily make performance on new data equal to training performance?</div>
+  ${nextButton("reveal","REVEAL RESULT")}
+ </div>`;
+}
+
+function reveal(){
+ app.innerHTML=`
+ <div class="card">
+  <span class="tag">NEW EVIDENCE</span><h2>The model changed.</h2>
+  <div class="grid">
+   <div class="metric"><small>TRAINING</small><strong>96%</strong><p>99% → 96%</p></div>
+   <div class="metric"><small>TEST</small><strong>78%</strong><p>63% → 78%</p></div>
+  </div>
+  <div class="explain"><strong>The bigger idea</strong><p class="muted">A useful model should not just perform well on examples it has already seen. It should learn patterns that work on new examples too.</p></div>
+  ${nextButton("lesson","LEARN THE CONCEPT")}
+ </div>`;
+}
+
+function lesson(){
+ setProgress(5);
+ app.innerHTML=`
+ <div class="card">
+  <span class="tag">STEP 4 • LEARN</span><h2>Now put a name to what you discovered.</h2>
+  <div class="explain">
+   <strong>Overfitting</strong>
+   <p class="muted"><b>Overfitting happens when a model learns the training data too specifically.</b> It can perform extremely well on examples it has seen, but struggle with new, unseen examples because it has not learned the general pattern well enough.</p>
+  </div>
+  <h3>Think of it like this</h3>
+  <p class="muted">A student memorizes the answers to practice questions. They score 100% on those familiar questions. But when the teacher changes the questions on the final exam, they score 55%.</p>
+  <div class="grid">
+   <div class="metric"><small>MEMORIZED</small><strong>Practice</strong><p>Familiar examples.</p></div>
+   <div class="metric"><small>STRUGGLES</small><strong>New exam</strong><p>Different examples.</p></div>
+  </div>
+  <div class="coach"><b>Simple version:</b> The model learned the examples too closely instead of learning patterns that generalize.</div>
+  <h3>Quick check</h3>
+  <p class="muted">Select the <b>two</b> statements that describe overfitting.</p>
+  <div class="option q" data-v="1">The model learns training examples too specifically.</div>
+  <div class="option q" data-v="2">The model always performs perfectly on new data.</div>
+  <div class="option q" data-v="3">The model can struggle with new or unseen examples.</div>
+  <div class="option q" data-v="4">The model automatically generalizes perfectly.</div>
+  <div id="mc"></div>
+ </div>`;
+ selected=[];
+ document.querySelectorAll(".q").forEach(o=>o.onclick=()=>{
+  o.classList.toggle("selected");
+  const v=o.dataset.v;
+  if(o.classList.contains("selected"))selected.push(v);else selected=selected.filter(x=>x!==v);
+  document.getElementById("mc").innerHTML=selected.length===2?nextButton("mcCheck","CHECK MY ANSWER"):"";
+ });
+}
+
+function mcCheck(){
+ if(selected.includes("1")&&selected.includes("3")&&selected.length===2){
+  document.getElementById("mc").innerHTML=`<div class="feedback success"><b>✓ Correct.</b> Those two statements describe the core behavior of overfitting.</div>${nextButton("own","EXPLAIN IT YOURSELF")}`;
+ }else{
+  document.getElementById("mc").innerHTML=`<div class="feedback hint"><b>Not quite.</b> Look for one statement about what happens to training examples and one about what happens to new examples.</div>`;
+ }
+}
+
+function own(){
+ setProgress(5);
+ app.innerHTML=`
+ <div class="card">
+  <span class="tag">STEP 5 • EXPLAIN</span><h2>Explain overfitting in your own words.</h2>
+  <p class="muted">There is no magic sentence you have to copy. Explain the idea you now understand.</p>
+  <div class="definition"><b>Helpful reminder:</b><p class="muted">Training data = examples the model has seen.<br>New/test data = examples the model has not seen.</p></div>
+  <textarea id="ownText" placeholder="Overfitting is when..."></textarea>
+  ${nextButton("ownCheck","CHECK MY EXPLANATION")}
+  <div id="ownFeedback"></div>
+ </div>`;
+}
+
+function ownCheck(){
+ const a=document.getElementById("ownText").value.trim();
+ if(!a){alert("Write your explanation first.");return}
+ ownExplanation=a;
+ const f=document.getElementById("ownFeedback");
+ const t=a.toLowerCase();
+ const hasTraining=/(train|practice|memor|specific|too closely|seen|learn)/.test(t);
+ const hasNew=/(new|unseen|test|different|exam|general|struggle|fail|worse|poor)/.test(t);
+ if(hasTraining&&hasNew){
+  f.innerHTML=`<div class="feedback success"><b>✓ Your explanation shows the core idea.</b><br><br>You connected overly specific learning with difficulty on new examples.</div>${nextButton("final","FINAL CHALLENGE")}`;
+ }else{
+  f.innerHTML=`<div class="feedback hint"><b>Use this structure:</b><br><br>“The model learns the training examples too specifically, so when it sees new data, it ______.”<br><br>Finish that idea in your own words.</div>`;
+ }
+}
+
+function finalChallenge(){
+ setProgress(6);
+ app.innerHTML=`
+ <div class="card">
+  <span class="tag">STEP 6 • TRANSFER</span><h2>One final situation.</h2>
+  <p class="muted">A student memorizes 100 practice questions and gets 100%. The teacher changes the questions on the final exam, and the student gets 55%.</p>
+  <h3>Is this similar to overfitting?</h3>
+  <div class="option finalOpt" data-v="yes">Yes — the student is great at familiar examples but struggles with new ones.</div>
+  <div class="option finalOpt" data-v="no">No — it has nothing to do with learning from examples.</div>
+  <div id="finalFeedback"></div>
+ </div>`;
+ document.querySelectorAll(".finalOpt").forEach(o=>o.onclick=()=>{
+  document.querySelectorAll(".finalOpt").forEach(x=>x.classList.remove("selected"));
+  o.classList.add("selected");
+  if(o.dataset.v==="yes")document.getElementById("finalFeedback").innerHTML=`<div class="feedback success"><b>✓ Exactly.</b> You recognized the same pattern outside machine learning.</div>${nextButton("complete","COMPLETE LESSON")}`;
+  else document.getElementById("finalFeedback").innerHTML=`<div class="feedback hint">Think about the practice questions versus the changed final questions. Which part is familiar, and which part is new?</div>`;
+ });
+}
+
+function complete(){
+ setProgress(6);
+ document.getElementById("status")?.remove();
+ app.innerHTML=`
+ <div class="card final">
+  <div class="check">✓</div>
+  <span class="tag">CONCEPT MASTERED</span>
+  <h1>Lesson complete.</h1>
+  <p class="muted">You didn't just memorize the word. You discovered the behavior, learned the concept, explained it, and applied it to a new situation.</p>
+  <div class="summary">
+   <div><b>Training data</b><br><span class="muted">Examples the model learns from.</span></div>
+   <div><b>Overfitting</b><br><span class="muted">Learning the training data too specifically.</span></div>
+   <div><b>New data</b><br><span class="muted">Performance can drop when the model encounters unseen examples.</span></div>
+   <div><b>Goal</b><br><span class="muted">Learn patterns that generalize.</span></div>
+  </div>
+  <div class="explain"><strong>In one sentence:</strong><p class="muted"><b>Overfitting is when a model learns training examples too specifically and therefore struggles with new, unseen data.</b></p></div>
+  <button class="good" id="restart">RESTART LESSON</button>
+ </div>`;
+}
+
+app.addEventListener("click",e=>{
+ const id=e.target.closest("button")?.id;
+ if(!id)return;
+ if(id==="begin")observe();
+ if(id==="cause")causes();
+ if(id==="diagnose")causes();
+ if(id==="experiment")experiment();
+ if(id==="reveal")reveal();
+ if(id==="lesson")lesson();
+ if(id==="mcCheck")mcCheck();
+ if(id==="own")own();
+ if(id==="ownCheck")ownCheck();
+ if(id==="final")finalChallenge();
+ if(id==="complete")complete();
+ if(id==="restart")home();
+});
+home();
+</script>
+</body>
+</html>
